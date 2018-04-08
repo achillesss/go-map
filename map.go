@@ -40,8 +40,8 @@ func (gm goMap) Handler() {
 	if mapValue.IsNil() {
 		mapValue = reflect.MakeMap(mapType)
 	}
-
 	keysType := mapType.Key()
+	valueType := mapType.Elem()
 
 	for {
 		select {
@@ -58,9 +58,9 @@ func (gm goMap) Handler() {
 
 		// delete
 		case m := <-gm.delChan:
-			zeroValue := reflect.New(mapValue.Elem().Type())
+			zeroValue := reflect.New(valueType)
 			mv := reflect.ValueOf(m)
-			mapValue.SetMapIndex(mv, zeroValue)
+			mapValue.SetMapIndex(mv, zeroValue.Elem())
 
 		// query
 		case m := <-gm.queryChan:
@@ -71,7 +71,7 @@ func (gm goMap) Handler() {
 			}
 			kv := reflect.ValueOf(m)
 			v := mapValue.MapIndex(kv)
-			newV := reflect.New(keysType)
+			newV := reflect.New(valueType)
 			newV.Elem().Set(v)
 			gm.queryRespChan <- map[interface{}]interface{}{m: newV.Elem().Interface()}
 		}
