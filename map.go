@@ -11,6 +11,7 @@ type goMap struct {
 	delChan       chan interface{}
 	queryChan     chan interface{}
 	queryRespChan chan map[interface{}]interface{}
+	dropChan      chan struct{}
 }
 
 // NewMap creates a map
@@ -25,6 +26,7 @@ func NewMap(srcMap interface{}) *goMap {
 	m.delChan = make(chan interface{})
 	m.queryChan = make(chan interface{})
 	m.queryRespChan = make(chan map[interface{}]interface{})
+	m.dropChan = make(chan struct{})
 	return &m
 }
 
@@ -74,6 +76,10 @@ func (gm goMap) Handler() {
 			newV := reflect.New(valueType)
 			newV.Elem().Set(v)
 			gm.queryRespChan <- map[interface{}]interface{}{m: newV.Elem().Interface()}
+
+		// drop, interrupt select loop
+		case <-gm.dropChan:
+			return
 		}
 
 	}
@@ -118,4 +124,9 @@ func (gm *goMap) Query(key interface{}, dst interface{}) error {
 
 	dv.Elem().Set(reflect.ValueOf(v))
 	return nil
+}
+
+// Close means no other coming actions after it.
+func (gm *goMap) Close() {
+	gm.dropChan <- struct{}{}
 }

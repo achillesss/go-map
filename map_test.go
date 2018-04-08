@@ -24,6 +24,7 @@ func TestMapInt(t *testing.T) {
 		t.Errorf("%s failed.", log.FuncName())
 		return
 	}
+	m.Close()
 }
 
 func TestMapString(t *testing.T) {
@@ -43,6 +44,7 @@ func TestMapString(t *testing.T) {
 		t.Errorf("%s failed.", log.FuncName())
 		return
 	}
+
 }
 
 func TestMapValueStruct(t *testing.T) {
