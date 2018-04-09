@@ -5,7 +5,7 @@ import (
 	"reflect"
 )
 
-type goMap struct {
+type GoMap struct {
 	instance      interface{}
 	addChan       chan map[interface{}]interface{}
 	delChan       chan interface{}
@@ -15,12 +15,12 @@ type goMap struct {
 }
 
 // NewMap creates a map
-func NewMap(srcMap interface{}) *goMap {
+func NewMap(srcMap interface{}) *GoMap {
 	srcType := reflect.TypeOf(srcMap)
 	if srcType.Kind() != reflect.Map {
 		panic("src not map")
 	}
-	var m goMap
+	var m GoMap
 	m.instance = srcMap
 	m.addChan = make(chan map[interface{}]interface{})
 	m.delChan = make(chan interface{})
@@ -35,7 +35,7 @@ func isMap(src interface{}) bool {
 }
 
 // MapHandler handles map
-func (gm goMap) Handler() {
+func (gm GoMap) Handler() {
 	mapValue := reflect.ValueOf(gm.instance)
 	mapType := reflect.TypeOf(gm.instance)
 
@@ -86,15 +86,15 @@ func (gm goMap) Handler() {
 }
 
 // Add add key: value to map
-func (gm *goMap) Add(key, value interface{}) {
+func (gm *GoMap) Add(key, value interface{}) {
 	gm.addChan <- map[interface{}]interface{}{key: value}
 }
 
-func (gm *goMap) Delete(key interface{}) {
+func (gm *GoMap) Delete(key interface{}) {
 	gm.delChan <- key
 }
 
-func (gm *goMap) pickQueryResp(key interface{}) interface{} {
+func (gm *GoMap) pickQueryResp(key interface{}) interface{} {
 	for resp := range gm.queryRespChan {
 		if resp == nil {
 			break
@@ -109,7 +109,7 @@ func (gm *goMap) pickQueryResp(key interface{}) interface{} {
 	return nil
 }
 
-func (gm *goMap) Query(key interface{}, dst interface{}) error {
+func (gm *GoMap) Query(key interface{}, dst interface{}) error {
 	gm.queryChan <- key
 	v := gm.pickQueryResp(key)
 	dstType := reflect.TypeOf(dst)
@@ -127,6 +127,6 @@ func (gm *goMap) Query(key interface{}, dst interface{}) error {
 }
 
 // Close means no other coming actions after it.
-func (gm *goMap) Close() {
+func (gm *GoMap) Close() {
 	gm.dropChan <- struct{}{}
 }
