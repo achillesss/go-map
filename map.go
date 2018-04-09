@@ -13,6 +13,7 @@ type GoMap struct {
 	queryRespChan     chan map[interface{}]interface{}
 	interfaceChan     chan struct{}
 	interfaceRespChan chan interface{}
+	setChan           chan interface{}
 	dropChan          chan struct{}
 }
 
@@ -30,6 +31,7 @@ func NewMap(srcMap interface{}) *GoMap {
 	m.queryRespChan = make(chan map[interface{}]interface{})
 	m.interfaceChan = make(chan struct{})
 	m.interfaceRespChan = make(chan interface{})
+	m.setChan = make(chan interface{})
 	m.dropChan = make(chan struct{})
 	return &m
 }
@@ -40,12 +42,13 @@ func isMap(src interface{}) bool {
 
 // MapHandler handles map
 func (gm GoMap) Handler() {
-	mapValue := reflect.ValueOf(gm.instance)
+	// mapValue := reflect.ValueOf(gm.instance)
 	mapType := reflect.TypeOf(gm.instance)
-
+	mapValue := reflect.ValueOf(gm.instance)
 	if mapValue.IsNil() {
 		mapValue = reflect.MakeMap(mapType)
 	}
+
 	keysType := mapType.Key()
 	valueType := mapType.Elem()
 
@@ -89,6 +92,11 @@ func (gm GoMap) Handler() {
 		// change to interface{}
 		case <-gm.interfaceChan:
 			gm.interfaceRespChan <- mapValue.Interface()
+
+		// set map
+		case m := <-gm.setChan:
+			mapValue = reflect.ValueOf(m)
+
 		// drop, interrupt select loop
 		case <-gm.dropChan:
 			return
@@ -119,6 +127,10 @@ func (gm *GoMap) pickQueryResp(key interface{}) interface{} {
 		gm.queryRespChan <- resp
 	}
 	return nil
+}
+
+func (gm *GoMap) Set(srcMap interface{}) {
+	gm.setChan <- srcMap
 }
 
 func (gm *GoMap) Query(key interface{}, dst interface{}) error {

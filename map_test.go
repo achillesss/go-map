@@ -9,7 +9,6 @@ import (
 
 func TestMapInt(t *testing.T) {
 	srcMap := make(map[int]int)
-	// var srcMap map[int]int
 	m := NewMap(srcMap)
 	go m.Handler()
 	var q int
@@ -39,6 +38,9 @@ func TestMapInt(t *testing.T) {
 		t.Errorf("%s failed.", log.FuncName())
 		return
 	}
+
+	m.Set(map[int]int{11: 11})
+	fmt.Printf("map: %+v\n", m.Interface())
 	m.Close()
 }
 
