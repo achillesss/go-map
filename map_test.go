@@ -1,6 +1,7 @@
 package gomap
 
 import (
+	"fmt"
 	"testing"
 
 	"github.com/achillesss/log"
@@ -11,15 +12,29 @@ func TestMapInt(t *testing.T) {
 	// var srcMap map[int]int
 	m := NewMap(srcMap)
 	go m.Handler()
-	m.Add(1, 1)
 	var q int
+
+	fmt.Printf("map: %+v\n", m.Interface())
+	m.Query(1, &q)
+	if q != 0 {
+		t.Errorf("%s failed.", log.FuncName())
+		return
+	}
+
+	m.Add(1, 1)
+	fmt.Printf("map: %+v\n", m.Interface())
 	m.Query(1, &q)
 	if q != 1 {
 		t.Errorf("%s failed.", log.FuncName())
 		return
 	}
+	fmt.Printf("map: %+v\n", m.Interface())
+
 	m.Delete(1)
+	fmt.Printf("map: %+v\n", m.Interface())
+
 	m.Query(1, &q)
+	fmt.Printf("map: %+v\n", m.Interface())
 	if q != 0 {
 		t.Errorf("%s failed.", log.FuncName())
 		return
@@ -31,19 +46,36 @@ func TestMapString(t *testing.T) {
 	var srcMap map[string]string
 	m := NewMap(srcMap)
 	go m.Handler()
-	m.Add("1", "1")
 	var q string
-	m.Query("1", &q)
-	if q != "1" {
-		t.Errorf("%s failed.", log.FuncName())
-		return
-	}
-	m.Delete("1")
+
+	fmt.Printf("map: %+v\n", m.Interface())
 	m.Query("1", &q)
 	if q != "" {
 		t.Errorf("%s failed.", log.FuncName())
 		return
 	}
+
+	m.Add("1", "1")
+	fmt.Printf("map: %+v\n", m.Interface())
+
+	m.Query("1", &q)
+	fmt.Printf("map: %+v\n", m.Interface())
+	if q != "1" {
+		t.Errorf("%s failed.", log.FuncName())
+		return
+	}
+	fmt.Printf("map: %+v\n", m.Interface())
+
+	m.Delete("1")
+	fmt.Printf("map: %+v\n", m.Interface())
+
+	m.Query("1", &q)
+	fmt.Printf("map: %+v\n", m.Interface())
+	if q != "" {
+		t.Errorf("%s failed.", log.FuncName())
+		return
+	}
+	m.Close()
 
 }
 

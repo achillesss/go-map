@@ -6,12 +6,14 @@ import (
 )
 
 type GoMap struct {
-	instance      interface{}
-	addChan       chan map[interface{}]interface{}
-	delChan       chan interface{}
-	queryChan     chan interface{}
-	queryRespChan chan map[interface{}]interface{}
-	dropChan      chan struct{}
+	instance          interface{}
+	addChan           chan map[interface{}]interface{}
+	delChan           chan interface{}
+	queryChan         chan interface{}
+	queryRespChan     chan map[interface{}]interface{}
+	interfaceChan     chan struct{}
+	interfaceRespChan chan interface{}
+	dropChan          chan struct{}
 }
 
 // NewMap creates a map
@@ -26,6 +28,8 @@ func NewMap(srcMap interface{}) *GoMap {
 	m.delChan = make(chan interface{})
 	m.queryChan = make(chan interface{})
 	m.queryRespChan = make(chan map[interface{}]interface{})
+	m.interfaceChan = make(chan struct{})
+	m.interfaceRespChan = make(chan interface{})
 	m.dropChan = make(chan struct{})
 	return &m
 }
@@ -60,9 +64,8 @@ func (gm GoMap) Handler() {
 
 		// delete
 		case m := <-gm.delChan:
-			zeroValue := reflect.New(valueType)
 			mv := reflect.ValueOf(m)
-			mapValue.SetMapIndex(mv, zeroValue.Elem())
+			mapValue.SetMapIndex(mv, reflect.Value{})
 
 		// query
 		case m := <-gm.queryChan:
@@ -71,12 +74,21 @@ func (gm GoMap) Handler() {
 				gm.queryRespChan <- nil
 				continue
 			}
+
 			kv := reflect.ValueOf(m)
 			v := mapValue.MapIndex(kv)
 			newV := reflect.New(valueType)
-			newV.Elem().Set(v)
+
+			if !v.IsValid() {
+				newV.Elem().Set(reflect.Zero(valueType))
+			} else {
+				newV.Elem().Set(v)
+			}
 			gm.queryRespChan <- map[interface{}]interface{}{m: newV.Elem().Interface()}
 
+		// change to interface{}
+		case <-gm.interfaceChan:
+			gm.interfaceRespChan <- mapValue.Interface()
 		// drop, interrupt select loop
 		case <-gm.dropChan:
 			return
@@ -124,6 +136,11 @@ func (gm *GoMap) Query(key interface{}, dst interface{}) error {
 
 	dv.Elem().Set(reflect.ValueOf(v))
 	return nil
+}
+
+func (gm *GoMap) Interface() interface{} {
+	gm.interfaceChan <- struct{}{}
+	return <-gm.interfaceRespChan
 }
 
 // Close means no other coming actions after it.
