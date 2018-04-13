@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"testing"
 
-	"github.com/achillesss/log"
+	"bitbucket.org/magmeng/go-utils/log"
 )
 
 func TestMapInt(t *testing.T) {
@@ -13,7 +13,7 @@ func TestMapInt(t *testing.T) {
 	go m.Handler()
 	var q int
 
-	fmt.Printf("map: %+v\n", m.Interface())
+	fmt.Printf("map: %+v, length: %d\n", m.Interface(), m.Len())
 	m.Query(1, &q)
 	if q != 0 {
 		t.Errorf("%s failed.", log.FuncName())
@@ -21,26 +21,26 @@ func TestMapInt(t *testing.T) {
 	}
 
 	m.Add(1, 1)
-	fmt.Printf("map: %+v\n", m.Interface())
+	fmt.Printf("map: %+v, length: %d\n", m.Interface(), m.Len())
 	m.Query(1, &q)
 	if q != 1 {
 		t.Errorf("%s failed.", log.FuncName())
 		return
 	}
-	fmt.Printf("map: %+v\n", m.Interface())
+	fmt.Printf("map: %+v, length: %d\n", m.Interface(), m.Len())
 
 	m.Delete(1)
-	fmt.Printf("map: %+v\n", m.Interface())
+	fmt.Printf("map: %+v, length: %d\n", m.Interface(), m.Len())
 
 	m.Query(1, &q)
-	fmt.Printf("map: %+v\n", m.Interface())
+	fmt.Printf("map: %+v, length: %d\n", m.Interface(), m.Len())
 	if q != 0 {
 		t.Errorf("%s failed.", log.FuncName())
 		return
 	}
 
 	m.Set(map[int]int{11: 11})
-	fmt.Printf("map: %+v\n", m.Interface())
+	fmt.Printf("map: %+v, length: %d\n", m.Interface(), m.Len())
 	m.Close()
 }
 
@@ -50,7 +50,7 @@ func TestMapString(t *testing.T) {
 	go m.Handler()
 	var q string
 
-	fmt.Printf("map: %+v\n", m.Interface())
+	fmt.Printf("map: %+v, length: %d\n", m.Interface(), m.Len())
 	m.Query("1", &q)
 	if q != "" {
 		t.Errorf("%s failed.", log.FuncName())
@@ -58,21 +58,21 @@ func TestMapString(t *testing.T) {
 	}
 
 	m.Add("1", "1")
-	fmt.Printf("map: %+v\n", m.Interface())
+	fmt.Printf("map: %+v, length: %d\n", m.Interface(), m.Len())
 
 	m.Query("1", &q)
-	fmt.Printf("map: %+v\n", m.Interface())
+	fmt.Printf("map: %+v, length: %d\n", m.Interface(), m.Len())
 	if q != "1" {
 		t.Errorf("%s failed.", log.FuncName())
 		return
 	}
-	fmt.Printf("map: %+v\n", m.Interface())
+	fmt.Printf("map: %+v, length: %d\n", m.Interface(), m.Len())
 
 	m.Delete("1")
-	fmt.Printf("map: %+v\n", m.Interface())
+	fmt.Printf("map: %+v, length: %d\n", m.Interface(), m.Len())
 
 	m.Query("1", &q)
-	fmt.Printf("map: %+v\n", m.Interface())
+	fmt.Printf("map: %+v, length: %d\n", m.Interface(), m.Len())
 	if q != "" {
 		t.Errorf("%s failed.", log.FuncName())
 		return

@@ -8,12 +8,17 @@ import (
 type GoMap struct {
 	instance          interface{}
 	addChan           chan map[interface{}]interface{}
+	afterAddChan      chan struct{}
 	delChan           chan interface{}
+	afterDelChan      chan struct{}
 	queryChan         chan interface{}
 	queryRespChan     chan map[interface{}]interface{}
 	interfaceChan     chan struct{}
 	interfaceRespChan chan interface{}
 	setChan           chan interface{}
+	afterSetChan      chan struct{}
+	checkLengthChan   chan struct{}
+	lengthChan        chan int
 	dropChan          chan struct{}
 }
 
@@ -26,12 +31,17 @@ func NewMap(srcMap interface{}) *GoMap {
 	var m GoMap
 	m.instance = srcMap
 	m.addChan = make(chan map[interface{}]interface{})
+	m.afterAddChan = make(chan struct{})
 	m.delChan = make(chan interface{})
+	m.afterDelChan = make(chan struct{})
 	m.queryChan = make(chan interface{})
 	m.queryRespChan = make(chan map[interface{}]interface{})
 	m.interfaceChan = make(chan struct{})
 	m.interfaceRespChan = make(chan interface{})
 	m.setChan = make(chan interface{})
+	m.afterSetChan = make(chan struct{})
+	m.lengthChan = make(chan int)
+	m.checkLengthChan = make(chan struct{})
 	m.dropChan = make(chan struct{})
 	return &m
 }
@@ -64,11 +74,13 @@ func (gm GoMap) Handler() {
 					mapValue.SetMapIndex(kv, vv)
 				}
 			}
+			gm.afterAddChan <- struct{}{}
 
 		// delete
 		case m := <-gm.delChan:
 			mv := reflect.ValueOf(m)
 			mapValue.SetMapIndex(mv, reflect.Value{})
+			gm.afterDelChan <- struct{}{}
 
 		// query
 		case m := <-gm.queryChan:
@@ -96,7 +108,10 @@ func (gm GoMap) Handler() {
 		// set map
 		case m := <-gm.setChan:
 			mapValue = reflect.ValueOf(m)
+			gm.afterSetChan <- struct{}{}
 
+		case <-gm.checkLengthChan:
+			gm.lengthChan <- mapValue.Len()
 		// drop, interrupt select loop
 		case <-gm.dropChan:
 			return
@@ -108,10 +123,12 @@ func (gm GoMap) Handler() {
 // Add add key: value to map
 func (gm *GoMap) Add(key, value interface{}) {
 	gm.addChan <- map[interface{}]interface{}{key: value}
+	<-gm.afterAddChan
 }
 
 func (gm *GoMap) Delete(key interface{}) {
 	gm.delChan <- key
+	<-gm.afterDelChan
 }
 
 func (gm *GoMap) pickQueryResp(key interface{}) interface{} {
@@ -131,6 +148,7 @@ func (gm *GoMap) pickQueryResp(key interface{}) interface{} {
 
 func (gm *GoMap) Set(srcMap interface{}) {
 	gm.setChan <- srcMap
+	<-gm.afterSetChan
 }
 
 func (gm *GoMap) Query(key interface{}, dst interface{}) error {
@@ -153,6 +171,11 @@ func (gm *GoMap) Query(key interface{}, dst interface{}) error {
 func (gm *GoMap) Interface() interface{} {
 	gm.interfaceChan <- struct{}{}
 	return <-gm.interfaceRespChan
+}
+
+func (gm GoMap) Len() int {
+	gm.checkLengthChan <- struct{}{}
+	return <-gm.lengthChan
 }
 
 // Close means no other coming actions after it.
